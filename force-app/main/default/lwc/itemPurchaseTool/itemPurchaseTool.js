@@ -100,6 +100,10 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
         return this.cart.reduce((sum, ci) => sum + (ci.item.Price__c * ci.quantity), 0);
     }
 
+    get isCartEmpty() {
+        return this.cartItemCount === 0;
+    }
+
     get hasItems() {
         return this.filteredItems.length > 0;
     }

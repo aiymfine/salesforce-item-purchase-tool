@@ -1,41 +1,55 @@
-import { LightningElement, api } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 
 export default class ItemCartModal extends LightningElement {
-    @api cart = [];
-    @api cartTotal = 0;
-    @api cartItemCount = 0;
-    @api isLoading = false;
+    @api cart;
+    @api cartTotal;
+    @api cartItemCount;
+    @api isLoading;
 
     get hasItems() {
-        return this.cart.length > 0;
+        return this.cart && this.cart.length > 0;
+    }
+
+    get isCheckoutDisabled() {
+        return !this.hasItems || this.isLoading;
     }
 
     handleClose() {
         this.dispatchEvent(new CustomEvent('closecart'));
     }
 
-    handleCheckout() {
-        this.dispatchEvent(new CustomEvent('checkout'));
-    }
-
     handleQuantityChange(event) {
         const itemId = event.target.dataset.itemId;
-        const newQuantity = parseInt(event.target.value, 10) || 1;
+        const newQuantity = parseInt(event.target.value, 10);
         this.dispatchEvent(new CustomEvent('updatequantity', {
             detail: { itemId, newQuantity }
         }));
     }
 
-    handleRemove(event) {
+    handleQuantityBlur(event) {
         const itemId = event.target.dataset.itemId;
+        const newQuantity = parseInt(event.target.value, 10);
+        if (isNaN(newQuantity) || newQuantity < 1) {
+            event.target.value = 1;
+            this.dispatchEvent(new CustomEvent('updatequantity', {
+                detail: { itemId, newQuantity: 1 }
+            }));
+        }
+    }
+
+    handleRemove(event) {
+        const itemId = event.currentTarget.dataset.itemId;
         this.dispatchEvent(new CustomEvent('removefromcart', {
             detail: itemId
         }));
     }
 
-    handleQuantityBlur(event) {
-        let val = parseInt(event.target.value, 10);
-        if (isNaN(val) || val < 1) val = 1;
-        event.target.value = val;
+    handleCheckout() {
+        if (this.isCheckoutDisabled) return;
+        this.dispatchEvent(new CustomEvent('checkout'));
+    }
+
+    getItemSubtotal(cartItem) {
+        return cartItem.item.Price__c * cartItem.quantity;
     }
 }

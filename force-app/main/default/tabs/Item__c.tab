@@ -3,6 +3,5 @@
     <customObject>true</customObject>
     <description>View and manage purchase items</description>
     <label>Items</label>
-    <mobileReady>false</mobileReady>
     <motif>Custom13: Domino</motif>
 </CustomTab>
