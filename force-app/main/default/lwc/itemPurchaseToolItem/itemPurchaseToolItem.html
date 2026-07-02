@@ -2,7 +2,7 @@
     <div class="slds-box item-tile">
         <!-- Item Image -->
         <template if:true={hasImage}>
-            <img src={itemImage} alt={item.Name} class="item-tile-image" onerror={handleImageError} />
+            <img src={itemImage} alt={item.Name} class="item-tile-image" onerror={handleImageError}></img>
         </template>
         <template if:false={hasImage}>
             <div class="item-tile-image-placeholder">

@@ -1,12 +1,21 @@
 public with sharing class UnsplashController {
 
+    public class UnsplashResult {
+        @AuraEnabled public List<UnsplashPhoto> results;
+    }
+
+    public class UnsplashPhoto {
+        @AuraEnabled public UnsplashUrls urls;
+    }
+
+    public class UnsplashUrls {
+        @AuraEnabled public String regular;
+    }
+
     @AuraEnabled(cacheable=true)
     public static String searchImage(String query) {
-        // Unsplash API key should be set as a Named Credential or Remote Site Setting
-        // For this implementation, we use a custom metadata type
         String accessKey = '';
 
-        // Try to get from custom setting
         List<UnsplashSettings__c> settings = UnsplashSettings__c.getall().values();
         if (!settings.isEmpty()) {
             accessKey = settings[0].AccessKey__c;
@@ -27,22 +36,9 @@ public with sharing class UnsplashController {
         try {
             HttpResponse response = http.send(request);
             if (response.getStatusCode() == 200) {
-                String responseBody = response.getBody();
-                // Parse the response to get the first image URL
-                // Unsplash returns: {"results": [{"urls": {"regular": "...", "small": "..."}}]}
-                // Use a simple string extraction for the first image URL
-                Integer resultsIndex = responseBody.indexOf('"results"');
-                if (resultsIndex > -1) {
-                    Integer urlsIndex = responseBody.indexOf('"urls"', resultsIndex);
-                    if (urlsIndex > -1) {
-                        Integer regularIndex = responseBody.indexOf('"regular"', urlsIndex);
-                        if (regularIndex > -1) {
-                            Integer colonIndex = responseBody.indexOf('"', regularIndex + 10);
-                            Integer startUrl = responseBody.indexOf('"', colonIndex + 1) + 1;
-                            Integer endUrl = responseBody.indexOf('"', startUrl);
-                            return responseBody.substring(startUrl, endUrl);
-                        }
-                    }
+                UnsplashResult result = (UnsplashResult) JSON.deserialize(response.getBody(), UnsplashResult.class);
+                if (result != null && result.results != null && !result.results.isEmpty()) {
+                    return result.results[0].urls.regular;
                 }
             }
         } catch (CalloutException e) {

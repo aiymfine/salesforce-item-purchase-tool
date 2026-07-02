@@ -15,11 +15,10 @@ trigger PurchaseLineTrigger on PurchaseLine__c (after insert, after update, afte
 
     if (purchaseIds.isEmpty()) return;
 
-    // Aggregate totals per Purchase
     List<Purchase__c> purchasesToUpdate = new List<Purchase__c>();
 
     for (AggregateResult ar : [
-        SELECT PurchaseId__c, SUM(Amount__c) totalItems, SUM(UnitCost__c * Amount__c) grandTotal
+        SELECT PurchaseId__c, SUM(Amount__c) totalItems, SUM(LineTotal__c) grandTotal
         FROM PurchaseLine__c
         WHERE PurchaseId__c IN :purchaseIds
         GROUP BY PurchaseId__c

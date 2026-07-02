@@ -56,19 +56,15 @@ public with sharing class ItemController {
         return item;
     }
 
-    @AuraEnabled
-    public static List<Item__c> getItemsWithQuantity(Id recordId) {
-        List<Item__c> items = new List<Item__c>();
-        for (Item__c item : [
+    @AuraEnabled(cacheable=true)
+    public static List<Item__c> getAvailableItems(Id recordId) {
+        // recordId used as cache key parameter for wire reactivity
+        return [
             SELECT Id, Name, Description__c, Type__c, Family__c, 
                    Image__c, Price__c, AvailableQuantity__c
             FROM Item__c
-            WHERE AvailableQuantity__c > 0
             ORDER BY Name ASC
-        ]) {
-            items.add(item);
-        }
-        return items;
+        ];
     }
 
     @AuraEnabled(cacheable=true)

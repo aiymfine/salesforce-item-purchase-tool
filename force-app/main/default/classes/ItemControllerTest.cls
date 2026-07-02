@@ -81,11 +81,27 @@ public class ItemControllerTest {
     }
 
     @isTest
-    static void testGetItemsWithQuantity() {
+    static void testCreateItemWithNullQuantity() {
+        Item__c newItem = new Item__c(
+            Name = 'Null Qty Item',
+            Price__c = 5.00
+        );
+        Test.startTest();
+        Item__c created = ItemController.createItem(newItem);
+        Test.stopTest();
+
+        System.assertEquals(0, created.AvailableQuantity__c);
+    }
+
+    @isTest
+    static void testGetAvailableItems() {
         Account acc = new Account(Name = 'Test Account');
         insert acc;
 
-        List<Item__c> items = ItemController.getItemsWithQuantity(acc.Id);
+        Test.startTest();
+        List<Item__c> items = ItemController.getAvailableItems(acc.Id);
+        Test.stopTest();
+
         System.assertEquals(5, items.size());
     }
 

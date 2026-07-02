@@ -6,7 +6,7 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import isCurrentUserManager from '@salesforce/apex/UserController.isCurrentUserManager';
 import getItemFamilies from '@salesforce/apex/ItemController.getItemFamilies';
 import getItemTypes from '@salesforce/apex/ItemController.getItemTypes';
-import getItemsWithQuantity from '@salesforce/apex/ItemController.getItemsWithQuantity';
+import getAvailableItems from '@salesforce/apex/ItemController.getAvailableItems';
 import checkout from '@salesforce/apex/PurchaseController.checkout';
 
 const ACCOUNT_FIELDS = [
@@ -31,21 +31,23 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
         return getFieldValue(this.accountRecord.data, 'Account.Industry') || '';
     }
 
-    @wire(getItemFamilies) familiesWire(result) {
+    @wire(getItemFamilies)
+    familiesWire(result) {
         this._familiesResult = result;
         if (result.data) {
-            this.families = result.data.map(f => ({ label: f, value: f }));
+            this._familyOptions = result.data.map(f => ({ label: f, value: f }));
         }
     }
 
-    @wire(getItemTypes) typesWire(result) {
+    @wire(getItemTypes)
+    typesWire(result) {
         this._typesResult = result;
         if (result.data) {
-            this.types = result.data.map(t => ({ label: t, value: t }));
+            this._typeOptions = result.data.map(t => ({ label: t, value: t }));
         }
     }
 
-    @wire(getItemsWithQuantity, { recordId: '$recordId' })
+    @wire(getAvailableItems, { recordId: '$recordId' })
     itemsWire(result) {
         this._itemsResult = result;
         if (result.data) {
@@ -54,17 +56,17 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
         }
     }
 
-    @wire(isCurrentUserManager) isManagerWire(result) {
+    @wire(isCurrentUserManager)
+    isManagerWire(result) {
         if (result.data) {
             this.isManager = result.data;
         }
     }
 
+    // Reactive state
     items = [];
     filteredItems = [];
     cart = [];
-    families = [];
-    types = [];
     selectedFamily = '';
     selectedType = '';
     searchKey = '';
@@ -75,9 +77,16 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
     isManager = false;
     isLoading = false;
 
+    // Wire result references for refresh
     _itemsResult;
     _familiesResult;
     _typesResult;
+    _familyOptions = [];
+    _typeOptions = [];
+
+    // Getters for template bindings
+    get familyOptions() { return this._familyOptions; }
+    get typeOptions() { return this._typeOptions; }
 
     get itemCount() {
         return this.filteredItems.length;

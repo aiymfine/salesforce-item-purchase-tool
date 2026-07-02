@@ -1,7 +1,9 @@
-import { LightningElement, api } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 
 export default class ItemPurchaseToolItem extends LightningElement {
     @api item;
+
+    @track imageFailed = false;
 
     get isOutOfStock() {
         return !this.item || this.item.AvailableQuantity__c <= 0;
@@ -12,19 +14,27 @@ export default class ItemPurchaseToolItem extends LightningElement {
     }
 
     get hasImage() {
-        return !!this.item?.Image__c;
+        return !!this.item?.Image__c && !this.imageFailed;
+    }
+
+    handleImageError() {
+        this.imageFailed = true;
     }
 
     handleDetails() {
         this.dispatchEvent(new CustomEvent('showdetail', {
-            detail: this.item.Id
+            detail: this.item.Id,
+            bubbles: false,
+            composed: false
         }));
     }
 
     handleAdd() {
         if (this.isOutOfStock) return;
         this.dispatchEvent(new CustomEvent('addtocart', {
-            detail: this.item.Id
+            detail: this.item.Id,
+            bubbles: false,
+            composed: false
         }));
     }
 }

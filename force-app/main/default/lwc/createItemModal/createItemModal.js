@@ -16,34 +16,8 @@ export default class CreateItemModal extends LightningElement {
     @track isSaving = false;
     @track isSearchingImage = false;
 
-    typeOptions = [
-        { label: 'Software', value: 'Software' },
-        { label: 'Hardware', value: 'Hardware' },
-        { label: 'Service', value: 'Service' },
-        { label: 'Accessory', value: 'Accessory' },
-        { label: 'Other', value: 'Other' }
-    ];
-
-    familyOptions = [
-        { label: 'Electronics', value: 'Electronics' },
-        { label: 'Office', value: 'Office' },
-        { label: 'Peripherals', value: 'Peripherals' },
-        { label: 'Software', value: 'Software' },
-        { label: 'Other', value: 'Other' }
-    ];
-
-    handleInputChange(event) {
-        const field = event.target.dataset.field;
-        const value = event.target.type === 'number' ? parseFloat(event.target.value) || 0 : event.target.value;
-        this.newItem = { ...this.newItem, [field]: value };
-    }
-
-    handleTypeChange(event) {
-        this.newItem.Type__c = event.detail.value;
-    }
-
-    handleFamilyChange(event) {
-        this.newItem.Family__c = event.detail.value;
+    handleClose() {
+        this.dispatchEvent(new CustomEvent('closecreate'));
     }
 
     handleImageUrlChange(event) {
@@ -51,19 +25,22 @@ export default class CreateItemModal extends LightningElement {
     }
 
     async handleSearchImage() {
-        if (!this.newItem.Name) {
+        const nameInput = this.template.querySelector('lightning-input-field[field-name="Name"]');
+        const itemName = nameInput ? nameInput.value : '';
+        
+        if (!itemName) {
             this.showToast('Error', 'Enter item name first to search for an image.', 'error');
             return;
         }
 
         this.isSearchingImage = true;
         try {
-            const imageUrl = await searchUnsplashImage({ query: this.newItem.Name });
+            const imageUrl = await searchUnsplashImage({ query: itemName });
             if (imageUrl) {
                 this.newItem.Image__c = imageUrl;
                 this.showToast('Found', 'Image found and set!', 'success');
             } else {
-                this.showToast('Not Found', 'No image found for "' + this.newItem.Name + '".', 'warning');
+                this.showToast('Not Found', 'No image found for "' + itemName + '".', 'warning');
             }
         } catch (error) {
             this.showToast('Error', 'Image search failed: ' + (error.body?.message || error.message), 'error');
@@ -72,23 +49,30 @@ export default class CreateItemModal extends LightningElement {
         }
     }
 
-    handleClose() {
-        this.dispatchEvent(new CustomEvent('closecreate'));
-    }
-
     handleSave() {
-        // Validation
-        if (!this.newItem.Name || this.newItem.Name.trim() === '') {
+        const inputs = this.template.querySelectorAll('lightning-input-field');
+        const itemData = {};
+
+        inputs.forEach(input => {
+            if (input.fieldName) {
+                itemData[input.fieldName] = input.value;
+            }
+        });
+
+        if (!itemData.Name || itemData.Name.trim() === '') {
             this.showToast('Error', 'Item Name is required.', 'error');
             return;
         }
-        if (this.newItem.Price__c <= 0) {
-            this.showToast('Error', 'Price must be greater than 0.', 'error');
-            return;
-        }
+
+        const newItem = {
+            ...itemData,
+            Image__c: this.newItem.Image__c || null,
+            Price__c: itemData.Price__c || 0,
+            AvailableQuantity__c: itemData.AvailableQuantity__c || 0
+        };
 
         this.isSaving = true;
-        createItem({ item: this.newItem })
+        createItem({ item: newItem })
             .then(result => {
                 this.showToast('Success', 'Item "' + result.Name + '" created successfully!', 'success');
                 this.dispatchEvent(new CustomEvent('itemcreated'));
