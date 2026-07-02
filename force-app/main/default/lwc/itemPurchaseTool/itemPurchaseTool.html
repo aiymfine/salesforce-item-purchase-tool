@@ -1,0 +1,136 @@
+<template>
+    <lightning-card title="Item Purchase Tool" icon-name="standard:product">
+        <div class="slds-m-around_medium">
+            <!-- Account Info -->
+            <div class="slds-box slds-theme_shade slds-m-bottom_medium slds-p-around_small">
+                <div class="slds-grid slds-gutters_small">
+                    <div class="slds-col">
+                        <p class="slds-text-title_caps">Account Name</p>
+                        <p class="slds-text-body_regular">{accountName}</p>
+                    </div>
+                    <div class="slds-col">
+                        <p class="slds-text-title_caps">Account Number</p>
+                        <p class="slds-text-body_regular">{accountNumber}</p>
+                    </div>
+                    <div class="slds-col">
+                        <p class="slds-text-title_caps">Industry</p>
+                        <p class="slds-text-body_regular">{accountIndustry}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="slds-m-bottom_medium">
+                <lightning-input
+                    label="Search"
+                    type="search"
+                    placeholder="Search by Name or Description..."
+                    value={searchKey}
+                    onchange={handleSearchChange}>
+                </lightning-input>
+            </div>
+
+            <!-- Filters + Count -->
+            <div class="slds-grid slds-gutters_small slds-m-bottom_medium">
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning-combobox
+                        name="family"
+                        label="Family"
+                        placeholder="All Families"
+                        options={familyOptions}
+                        value={selectedFamily}
+                        onchange={handleFamilyChange}>
+                    </lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning-combobox
+                        name="type"
+                        label="Type"
+                        placeholder="All Types"
+                        options={typeOptions}
+                        value={selectedType}
+                        onchange={handleTypeChange}>
+                    </lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-3">
+                    <div class="slds-box slds-box_x-small slds-theme_shade slds-p-around_small">
+                        <p class="slds-text-title_caps">Items Shown</p>
+                        <p class="slds-text-heading_large">{itemCount}</p>
+                    </div>
+                    <div class="slds-m-top_small">
+                        <lightning-button
+                            variant="brand"
+                            label="Create Item"
+                            if:true={isManager}
+                            onclick={handleShowCreate}
+                            class="slds-m-top_x-small">
+                        </lightning-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cart Button -->
+            <div class="slds-text-align_right slds-m-bottom_medium">
+                <lightning-button
+                    variant="neutral"
+                    label="Cart ({cartItemCount})"
+                    icon-name="utility:shopping_cart"
+                    onclick={handleShowCart}
+                    disabled={cartItemCount === 0}>
+                </lightning-button>
+            </div>
+
+            <!-- Item Grid -->
+            <template if:true={filteredItems}>
+                <div class="slds-grid slds-gutters_small slds-wrap">
+                    <template for:each={filteredItems} for:item="item">
+                        <div key={item.Id} class="slds-col slds-size_1-of-3">
+                            <c-item-purchase-tool-item
+                                item={item}
+                                onshowdetail={handleShowDetail}
+                                onaddtocart={handleAddToCart}>
+                            </c-item-purchase-tool-item>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <template if:false={filteredItems}>
+                <div class="slds-text-align_center slds-m-around_medium">
+                    <p>No items found matching your criteria.</p>
+                </div>
+            </template>
+
+            <!-- Cart Modal -->
+            <template if:true={showCartModal}>
+                <c-item-cart-modal
+                    cart={cart}
+                    cart-total={cartTotal}
+                    cart-item-count={cartItemCount}
+                    onclosecart={handleCloseCart}
+                    oncheckout={handleCheckout}
+                    onupdatequantity={handleUpdateCartQuantity}
+                    onremovefromcart={handleRemoveFromCart}
+                    is-loading={isLoading}>
+                </c-item-cart-modal>
+            </template>
+
+            <!-- Detail Modal -->
+            <template if:true={showDetailModal}>
+                <c-item-detail-modal
+                    item={selectedItem}
+                    onclosedetail={handleCloseDetail}
+                    onaddtocart={handleAddToCart}>
+                </c-item-detail-modal>
+            </template>
+
+            <!-- Create Item Modal -->
+            <template if:true={showCreateModal}>
+                <c-create-item-modal
+                    onclosecreate={handleCloseCreate}
+                    onitemcreated={handleItemCreated}>
+                </c-create-item-modal>
+            </template>
+        </div>
+    </lightning-card>
+</template>

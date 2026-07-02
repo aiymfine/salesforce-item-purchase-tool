@@ -1,0 +1,50 @@
+<template>
+    <div class="slds-box item-tile">
+        <!-- Item Image -->
+        <template if:true={hasImage}>
+            <img src={itemImage} alt={item.Name} class="item-tile-image" onerror={handleImageError} />
+        </template>
+        <template if:false={hasImage}>
+            <div class="item-tile-image-placeholder">
+                <lightning-icon icon-name="standard:product" size="large"></lightning-icon>
+            </div>
+        </template>
+
+        <!-- Item Info -->
+        <h3 class="slds-text-heading_small slds-truncate" title={item.Name}>{item.Name}</h3>
+
+        <div class="slds-text-body_small slds-text-color_weak">
+            <template if:true={item.Type__c}>{item.Type__c}</template>
+            <template if:true={item.Family__c}>
+                <span> · {item.Family__c}</span>
+            </template>
+        </div>
+
+        <p class="slds-text-title_caps slds-m-top_x-small">
+            $ {item.Price__c}
+        </p>
+
+        <p class="slds-text-body_small">
+            Stock: {item.AvailableQuantity__c}
+        </p>
+
+        <!-- Actions -->
+        <div class="slds-m-top_small slds-grid slds-gutters_xxx-small">
+            <lightning-button
+                variant="neutral"
+                label="Details"
+                title="View Details"
+                onclick={handleDetails}
+                class="slds-col">
+            </lightning-button>
+            <lightning-button
+                variant="brand"
+                label="Add"
+                title="Add to Cart"
+                onclick={handleAdd}
+                disabled={isOutOfStock}
+                class="slds-col">
+            </lightning-button>
+        </div>
+    </div>
+</template>

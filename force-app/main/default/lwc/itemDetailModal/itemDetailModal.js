@@ -1,0 +1,23 @@
+import { LightningElement, api } from 'lwc';
+
+export default class ItemDetailModal extends LightningElement {
+    @api item;
+
+    get isOutOfStock() {
+        return !this.item || this.item.AvailableQuantity__c <= 0;
+    }
+
+    get hasImage() {
+        return !!this.item?.Image__c;
+    }
+
+    handleClose() {
+        this.dispatchEvent(new CustomEvent('closedetail'));
+    }
+
+    handleAdd() {
+        this.dispatchEvent(new CustomEvent('addtocart', {
+            detail: this.item.Id
+        }));
+    }
+}

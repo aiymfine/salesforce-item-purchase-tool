@@ -1,0 +1,108 @@
+<template>
+    <div class="slds-backdrop slds-backdrop_open" role="presentation">
+        <section class="slds-modal slds-fade-in-open" role="dialog" aria-modal="true">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title slds-hyphenate">Create New Item</h2>
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleClose}>
+                        <lightning-icon icon-name="utility:close" alternative-text="Close" variant="inverse" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-record-edit-form
+                        object-api-name="Item__c"
+                        layout-type="Full">
+                        <div class="slds-grid slds-gutters_small">
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-input-field field-name="Name" value={newItem.Name} data-field="Name" onchange={handleInputChange}></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-combobox
+                                    name="type"
+                                    label="Type"
+                                    options={typeOptions}
+                                    value={newItem.Type__c}
+                                    onchange={handleTypeChange}
+                                    required>
+                                </lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-combobox
+                                    name="family"
+                                    label="Family"
+                                    options={familyOptions}
+                                    value={newItem.Family__c}
+                                    onchange={handleFamilyChange}
+                                    required>
+                                </lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-input
+                                    type="currency"
+                                    label="Price"
+                                    value={newItem.Price__c}
+                                    data-field="Price__c"
+                                    onchange={handleInputChange}
+                                    required>
+                                </lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-input
+                                    type="number"
+                                    label="Available Quantity"
+                                    value={newItem.AvailableQuantity__c}
+                                    data-field="AvailableQuantity__c"
+                                    onchange={handleInputChange}
+                                    min="0">
+                                </lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1">
+                                <lightning-textarea
+                                    label="Description"
+                                    value={newItem.Description__c}
+                                    data-field="Description__c"
+                                    onchange={handleInputChange}
+                                    maxlength="255">
+                                </lightning-textarea>
+                            </div>
+
+                            <!-- Image URL with Unsplash search -->
+                            <div class="slds-col slds-size_1-of-1">
+                                <label class="slds-form-element__label">Image URL</label>
+                                <div class="slds-input-has-icon slds-input-has-icon_right">
+                                    <lightning-input
+                                        type="url"
+                                        value={newItem.Image__c}
+                                        onchange={handleImageUrlChange}
+                                        placeholder="https://...">
+                                    </lightning-input>
+                                    <button class="slds-button slds-button_icon slds-input__icon slds-input__icon_right" title="Search Unsplash" onclick={handleSearchImage}>
+                                        <template if:true={isSearchingImage}>
+                                            <lightning-spinner variant="brand" size="small"></lightning-spinner>
+                                        </template>
+                                        <template if:false={isSearchingImage}>
+                                            <lightning-icon icon-name="standard:photo" size="small"></lightning-icon>
+                                        </template>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </lightning-record-edit-form>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={handleClose}>Cancel</button>
+                    <lightning-button
+                        variant="brand"
+                        label="Create Item"
+                        onclick={handleSave}
+                        disabled={isSaving}>
+                    </lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
+</template>
