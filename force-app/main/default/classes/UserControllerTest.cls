@@ -1,13 +1,11 @@
 @isTest
-public class UserControllerTest {
+public without sharing class UserControllerTest {
 
     @isTest
-    static void testIsCurrentUserManager() {
+    static void testIsCurrentUserManagerFieldNotExists() {
         Test.startTest();
-        Boolean isManager = UserController.isCurrentUserManager();
+        Boolean result = UserController.isCurrentUserManager();
         Test.stopTest();
-
-        // Should return false by default for test user
-        System.assert(isManager != null, 'Should return a boolean value');
+        System.assertEquals(false, result);
     }
 }

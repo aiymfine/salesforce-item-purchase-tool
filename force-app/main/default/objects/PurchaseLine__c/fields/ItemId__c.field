@@ -5,7 +5,7 @@
     <label>Item</label>
     <referenceTo>Item__c</referenceTo>
     <relationshipLabel>Purchase Lines</relationshipLabel>
-    <relationshipName>Purchase_Lines__r</relationshipName>
+    <relationshipName>Items</relationshipName>
     <relationshipOrder>1</relationshipOrder>
     <reparentableMasterDetail>true</reparentableMasterDetail>
     <trackTrending>false</trackTrending>

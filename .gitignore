@@ -46,3 +46,12 @@ $RECYCLE.BIN/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Temp deploy artifacts
+deploy-*/
+*.zip
+
+# Test result files
+test-results*.txt
+test-verbose.txt
+*.apex

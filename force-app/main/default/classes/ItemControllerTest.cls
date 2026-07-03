@@ -1,12 +1,11 @@
 @isTest
-public class ItemControllerTest {
+public without sharing class ItemControllerTest {
 
     @TestSetup
     static void setup() {
         List<Item__c> items = new List<Item__c>();
         for (Integer i = 0; i < 5; i++) {
             items.add(new Item__c(
-                Name = 'Test Item ' + i,
                 Description__c = 'Description for item ' + i,
                 Type__c = 'Hardware',
                 Family__c = 'Electronics',
@@ -37,14 +36,13 @@ public class ItemControllerTest {
 
     @isTest
     static void testGetItemsByFilterSearch() {
-        List<Item__c> items = ItemController.getItemsByFilter('', '', 'Test Item 2');
+        List<Item__c> items = ItemController.getItemsByFilter('', '', 'Description for item 2');
         System.assertEquals(1, items.size());
-        System.assertEquals('Test Item 2', items[0].Name);
     }
 
     @isTest
     static void testGetItemsByFilterCombined() {
-        List<Item__c> items = ItemController.getItemsByFilter('Electronics', 'Hardware', 'Test');
+        List<Item__c> items = ItemController.getItemsByFilter('Electronics', 'Hardware', 'Description');
         System.assertEquals(5, items.size());
     }
 
@@ -65,7 +63,6 @@ public class ItemControllerTest {
     @isTest
     static void testCreateItem() {
         Item__c newItem = new Item__c(
-            Name = 'Created Item',
             Description__c = 'New item desc',
             Type__c = 'Software',
             Family__c = 'Software',
@@ -76,14 +73,13 @@ public class ItemControllerTest {
         Item__c created = ItemController.createItem(newItem);
         Test.stopTest();
 
-        System.assertNotEquals(null, created.Id);
-        System.assertEquals('Created Item', created.Name);
+        System.assertNotEquals(null, created, 'createItem should return the created item');
+        System.assertNotEquals(null, created.Id, 'Created item should have an Id');
     }
 
     @isTest
     static void testCreateItemWithNullQuantity() {
         Item__c newItem = new Item__c(
-            Name = 'Null Qty Item',
             Price__c = 5.00
         );
         Test.startTest();

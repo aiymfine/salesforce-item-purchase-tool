@@ -15,22 +15,29 @@ trigger PurchaseLineTrigger on PurchaseLine__c (after insert, after update, afte
 
     if (purchaseIds.isEmpty()) return;
 
-    List<Purchase__c> purchasesToUpdate = new List<Purchase__c>();
-
-    for (AggregateResult ar : [
-        SELECT PurchaseId__c, SUM(Amount__c) totalItems, SUM(LineTotal__c) grandTotal
+    // Calculate totals from individual records instead of using aggregate on formula field
+    List<PurchaseLine__c> allLines = [
+        SELECT PurchaseId__c, Amount__c, UnitCost__c
         FROM PurchaseLine__c
         WHERE PurchaseId__c IN :purchaseIds
-        GROUP BY PurchaseId__c
-    ]) {
-        purchasesToUpdate.add(new Purchase__c(
-            Id = (Id) ar.get('PurchaseId__c'),
-            TotalItems__c = (Decimal) ar.get('totalItems'),
-            GrandTotal__c = (Decimal) ar.get('grandTotal')
-        ));
+    ];
+
+    Map<Id, Purchase__c> purchasesToUpdate = new Map<Id, Purchase__c>();
+    for (PurchaseLine__c pl : allLines) {
+        Purchase__c p = purchasesToUpdate.get(pl.PurchaseId__c);
+        if (p == null) {
+            p = new Purchase__c(
+                Id = pl.PurchaseId__c,
+                TotalItems__c = 0,
+                GrandTotal__c = 0
+            );
+            purchasesToUpdate.put(pl.PurchaseId__c, p);
+        }
+        p.TotalItems__c += pl.Amount__c;
+        p.GrandTotal__c += pl.UnitCost__c * pl.Amount__c;
     }
 
     if (!purchasesToUpdate.isEmpty()) {
-        update purchasesToUpdate;
+        update purchasesToUpdate.values();
     }
 }

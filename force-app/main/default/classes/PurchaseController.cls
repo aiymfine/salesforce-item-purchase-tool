@@ -117,7 +117,7 @@ public with sharing class PurchaseController {
         return [
             SELECT Id, Name, ClientId__c, ClientId__r.Name, TotalItems__c, GrandTotal__c,
                    (SELECT Id, Name, ItemId__c, ItemId__r.Name, Amount__c, UnitCost__c 
-                    FROM Purchase_Lines__r)
+                    FROM PurchaseLines__r)
             FROM Purchase__c
             WHERE Id = :purchaseId
         ];
