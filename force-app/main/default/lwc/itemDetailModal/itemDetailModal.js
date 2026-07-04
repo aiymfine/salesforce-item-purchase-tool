@@ -16,8 +16,11 @@ export default class ItemDetailModal extends LightningElement {
     }
 
     handleAdd() {
-        this.dispatchEvent(new CustomEvent('addtocart', {
-            detail: this.item.Id
-        }));
+        const itemId = this.item.Id || this.item.id;
+        if (itemId) {
+            this.dispatchEvent(new CustomEvent('addtocart', {
+                detail: String(itemId)
+            }));
+        }
     }
 }

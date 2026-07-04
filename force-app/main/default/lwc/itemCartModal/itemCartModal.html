@@ -24,24 +24,24 @@
                             </thead>
                             <tbody>
                                 <template for:each={cart} for:item="cartItem">
-                                    <tr key={cartItem.item.Id}>
-                                        <td>{cartItem.item.Name}</td>
-                                        <td>${cartItem.item.Price__c}</td>
+                                    <tr key={cartItem.itemId}>
+                                        <td>{cartItem.itemName}</td>
+                                        <td>${cartItem.unitPrice}</td>
                                         <td>
                                             <lightning-input
                                                 type="number"
                                                 variant="label-hidden"
                                                 min="1"
-                                                max={cartItem.item.AvailableQuantity__c}
+                                                max={cartItem.maxQty}
                                                 value={cartItem.quantity}
-                                                data-item-id={cartItem.item.Id}
+                                                data-item-id={cartItem.itemId}
                                                 onchange={handleQuantityChange}
                                                 onblur={handleQuantityBlur}>
                                             </lightning-input>
                                         </td>
-                                        <td>{cartItem.item.Price__c * cartItem.quantity}</td>
+                                        <td>{cartItem.unitPrice * cartItem.quantity}</td>
                                         <td>
-                                            <button class="slds-button slds-button_icon slds-button_icon-text-destructive" title="Remove" data-item-id={cartItem.item.Id} onclick={handleRemove}>
+                                            <button class="slds-button slds-button_icon slds-button_icon-text-destructive" title="Remove" data-item-id={cartItem.itemId} onclick={handleRemove}>
                                                 <lightning-icon icon-name="utility:delete" size="small"></lightning-icon>
                                                 <span class="slds-assistive-text">Remove</span>
                                             </button>

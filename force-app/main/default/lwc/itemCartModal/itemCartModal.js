@@ -50,6 +50,6 @@ export default class ItemCartModal extends LightningElement {
     }
 
     getItemSubtotal(cartItem) {
-        return cartItem.item.Price__c * cartItem.quantity;
+        return cartItem.unitPrice * cartItem.quantity;
     }
 }

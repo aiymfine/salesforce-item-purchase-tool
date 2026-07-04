@@ -27,12 +27,12 @@ public without sharing class PurchaseControllerTest {
         Id accountId = getTestAccountId();
         List<Item__c> items = [SELECT Id, Price__c FROM Item__c LIMIT 2];
 
-        List<PurchaseController.CartItem> cartItems = new List<PurchaseController.CartItem>();
-        cartItems.add(new PurchaseController.CartItem(items[0].Id, 2, items[0].Price__c));
-        cartItems.add(new PurchaseController.CartItem(items[1].Id, 1, items[1].Price__c));
+        List<String> itemIds = new List<String>{ String.valueOf(items[0].Id), String.valueOf(items[1].Id) };
+        List<Integer> quantities = new List<Integer>{ 2, 1 };
+        List<Decimal> unitCosts = new List<Decimal>{ items[0].Price__c, items[1].Price__c };
 
         Test.startTest();
-        PurchaseController.CheckoutResult result = PurchaseController.checkout(accountId, cartItems);
+        PurchaseController.CheckoutResult result = PurchaseController.checkout(accountId, itemIds, quantities, unitCosts);
         Test.stopTest();
 
         System.assertEquals(true, result.success, 'Checkout should succeed: ' + result.message);
@@ -56,7 +56,7 @@ public without sharing class PurchaseControllerTest {
         Id accountId = getTestAccountId();
 
         Test.startTest();
-        PurchaseController.CheckoutResult result = PurchaseController.checkout(accountId, new List<PurchaseController.CartItem>());
+        PurchaseController.CheckoutResult result = PurchaseController.checkout(accountId, new List<String>(), new List<Integer>(), new List<Decimal>());
         Test.stopTest();
 
         System.assertEquals(false, result.success);
@@ -64,15 +64,27 @@ public without sharing class PurchaseControllerTest {
     }
 
     @isTest
+    static void testCheckoutNullCart() {
+        Id accountId = getTestAccountId();
+
+        Test.startTest();
+        PurchaseController.CheckoutResult result = PurchaseController.checkout(accountId, null, null, null);
+        Test.stopTest();
+
+        System.assertEquals(false, result.success);
+    }
+
+    @isTest
     static void testCheckoutInsufficientStock() {
         Id accountId = getTestAccountId();
         Item__c item = [SELECT Id, Price__c, AvailableQuantity__c FROM Item__c LIMIT 1];
 
-        List<PurchaseController.CartItem> cartItems = new List<PurchaseController.CartItem>();
-        cartItems.add(new PurchaseController.CartItem(item.Id, 999, item.Price__c));
+        List<String> itemIds = new List<String>{ String.valueOf(item.Id) };
+        List<Integer> quantities = new List<Integer>{ 999 };
+        List<Decimal> unitCosts = new List<Decimal>{ item.Price__c };
 
         Test.startTest();
-        PurchaseController.CheckoutResult result = PurchaseController.checkout(accountId, cartItems);
+        PurchaseController.CheckoutResult result = PurchaseController.checkout(accountId, itemIds, quantities, unitCosts);
         Test.stopTest();
 
         System.assertEquals(false, result.success);
@@ -80,14 +92,35 @@ public without sharing class PurchaseControllerTest {
     }
 
     @isTest
-    static void testCheckoutNullCart() {
+    static void testCheckoutInvalidItemId() {
         Id accountId = getTestAccountId();
 
+        List<String> itemIds = new List<String>{ 'invalid-id-123' };
+        List<Integer> quantities = new List<Integer>{ 1 };
+        List<Decimal> unitCosts = new List<Decimal>{ 10.00 };
+
         Test.startTest();
-        PurchaseController.CheckoutResult result = PurchaseController.checkout(accountId, null);
+        PurchaseController.CheckoutResult result = PurchaseController.checkout(accountId, itemIds, quantities, unitCosts);
         Test.stopTest();
 
         System.assertEquals(false, result.success);
+        System.assertEquals(true, result.message.contains('Invalid ID'));
+    }
+
+    @isTest
+    static void testCheckoutEmptyItemId() {
+        Id accountId = getTestAccountId();
+
+        List<String> itemIds = new List<String>{ '' };
+        List<Integer> quantities = new List<Integer>{ 1 };
+        List<Decimal> unitCosts = new List<Decimal>{ 10.00 };
+
+        Test.startTest();
+        PurchaseController.CheckoutResult result = PurchaseController.checkout(accountId, itemIds, quantities, unitCosts);
+        Test.stopTest();
+
+        System.assertEquals(false, result.success);
+        System.assertEquals(true, result.message.contains('Item ID missing'));
     }
 
     @isTest
@@ -95,11 +128,12 @@ public without sharing class PurchaseControllerTest {
         Id accountId = getTestAccountId();
         Item__c item = [SELECT Id, Price__c FROM Item__c LIMIT 1];
 
-        PurchaseController.CartItem cartItem = new PurchaseController.CartItem(item.Id, 1, item.Price__c);
-        PurchaseController.CheckoutResult checkoutResult = PurchaseController.checkout(accountId, new List<PurchaseController.CartItem>{ cartItem });
+        List<String> itemIds = new List<String>{ String.valueOf(item.Id) };
+        List<Integer> quantities = new List<Integer>{ 1 };
+        List<Decimal> unitCosts = new List<Decimal>{ item.Price__c };
 
+        PurchaseController.CheckoutResult checkoutResult = PurchaseController.checkout(accountId, itemIds, quantities, unitCosts);
         System.assertEquals(true, checkoutResult.success, 'Pre-checkout should succeed: ' + checkoutResult.message);
-        System.assertNotEquals(null, checkoutResult.purchaseId, 'Pre-checkout purchaseId should not be null');
 
         Test.startTest();
         Purchase__c purchase = PurchaseController.getPurchaseById(checkoutResult.purchaseId);

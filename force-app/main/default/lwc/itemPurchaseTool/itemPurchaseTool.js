@@ -97,7 +97,7 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
     }
 
     get cartTotal() {
-        return this.cart.reduce((sum, ci) => sum + (ci.item.Price__c * ci.quantity), 0);
+        return this.cart.reduce((sum, ci) => sum + (ci.unitPrice * ci.quantity), 0);
     }
 
     get isCartEmpty() {
@@ -142,9 +142,13 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
         this.filteredItems = filtered;
     }
 
+    _getItemId(item) {
+        return item.Id || item.id;
+    }
+
     handleShowDetail(event) {
         const itemId = event.detail;
-        this.selectedItem = this.items.find(i => i.Id === itemId);
+        this.selectedItem = this.items.find(i => this._getItemId(i) === itemId);
         this.showDetailModal = true;
     }
 
@@ -176,13 +180,19 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
 
     handleAddToCart(event) {
         const itemId = event.detail;
-        const item = this.items.find(i => i.Id === itemId);
+        if (!itemId) {
+            console.error('handleAddToCart: itemId is empty!', event.detail);
+            this.showToast('Error', 'Could not identify item.', 'error');
+            return;
+        }
+        console.log('handleAddToCart: itemId =', itemId, typeof itemId);
+        const item = this.items.find(i => this._getItemId(i) === itemId);
         if (!item || item.AvailableQuantity__c <= 0) {
             this.showToast('Out of Stock', 'This item is no longer available.', 'warning');
             return;
         }
 
-        const existing = this.cart.find(c => c.item.Id === itemId);
+        const existing = this.cart.find(c => c.itemId === itemId);
         if (existing) {
             if (existing.quantity < item.AvailableQuantity__c) {
                 existing.quantity++;
@@ -191,47 +201,57 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
                 this.showToast('Max Stock', 'Cannot add more of this item.', 'warning');
             }
         } else {
-            this.cart = [...this.cart, { item, quantity: 1 }];
+            this.cart = [...this.cart, {
+                itemId: String(itemId),
+                itemName: item.Name,
+                unitPrice: item.Price__c,
+                maxQty: item.AvailableQuantity__c,
+                quantity: 1
+            }];
         }
 
+        console.log('Cart after add:', JSON.parse(JSON.stringify(this.cart)));
         this.showToast('Added', item.Name + ' added to cart.', 'success');
     }
 
     handleUpdateCartQuantity(event) {
         const { itemId, newQuantity } = event.detail;
         this.cart = this.cart.map(c =>
-            c.item.Id === itemId ? { ...c, quantity: newQuantity } : c
+            c.itemId === itemId ? { ...c, quantity: newQuantity } : c
         );
     }
 
     handleRemoveFromCart(event) {
         const itemId = event.detail;
-        this.cart = this.cart.filter(c => c.item.Id !== itemId);
+        this.cart = this.cart.filter(c => c.itemId !== itemId);
     }
 
     handleCheckout() {
         this.isLoading = true;
-        const cartItems = this.cart.map(c => ({
-            itemId: c.item.Id,
-            quantity: c.quantity,
-            unitCost: c.item.Price__c
-        }));
+        const itemIds = this.cart.map(c => c.itemId);
+        const quantities = this.cart.map(c => c.quantity);
+        const unitCosts = this.cart.map(c => c.unitPrice);
+        console.log('CHECKOUT: itemIds=' + JSON.stringify(itemIds));
 
-        checkout({ accountId: this.recordId, cartItems })
+        checkout({ accountId: this.recordId, itemIds, quantities, unitCosts })
             .then(result => {
                 if (result.success) {
-                    this.showToast('Success', 'Purchase created! Redirecting...', 'success');
+                    this.showToast('Success', 'Purchase created! (ID: ' + result.purchaseId + ')', 'success');
                     this.cart = [];
                     this.showCartModal = false;
 
-                    this[NavigationMixin.Navigate]({
-                        type: 'standard__recordPage',
-                        attributes: {
-                            recordId: result.purchaseId,
-                            objectApiName: 'Purchase__c',
-                            actionName: 'view'
-                        }
-                    });
+                    try {
+                        this[NavigationMixin.Navigate]({
+                            type: 'standard__recordPage',
+                            attributes: {
+                                recordId: result.purchaseId,
+                                objectApiName: 'Purchase__c',
+                                actionName: 'view'
+                            }
+                        });
+                    } catch (navError) {
+                        // Navigation may fail if user lacks tab access
+                    }
                 } else {
                     this.showToast('Checkout Failed', result.message, 'error');
                 }

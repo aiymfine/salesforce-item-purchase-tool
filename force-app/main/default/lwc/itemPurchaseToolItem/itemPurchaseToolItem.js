@@ -21,18 +21,34 @@ export default class ItemPurchaseToolItem extends LightningElement {
         this.imageFailed = true;
     }
 
+    _getItemId() {
+        // querySelector reads data-attr from native div — bypasses lightning-button shadow DOM
+        const el = this.template.querySelector('[data-item-id]');
+        return el ? el.dataset.itemId : null;
+    }
+
     handleDetails() {
-        this.dispatchEvent(new CustomEvent('showdetail', {
-            detail: this.item.Id,
-            bubbles: false,
-            composed: false
-        }));
+        const itemId = this._getItemId();
+        console.log('handleDetails: itemId =', itemId);
+        if (itemId) {
+            this.dispatchEvent(new CustomEvent('showdetail', {
+                detail: itemId,
+                bubbles: false,
+                composed: false
+            }));
+        }
     }
 
     handleAdd() {
         if (this.isOutOfStock) return;
+        const itemId = this._getItemId();
+        console.log('handleAdd: itemId =', itemId, 'item.Id =', this.item?.Id, 'item.id =', this.item?.id);
+        if (!itemId) {
+            console.error('handleAdd: FAILED to get itemId!', JSON.stringify(this.item));
+            return;
+        }
         this.dispatchEvent(new CustomEvent('addtocart', {
-            detail: this.item.Id,
+            detail: itemId,
             bubbles: false,
             composed: false
         }));

@@ -1,17 +1,5 @@
 public with sharing class PurchaseController {
 
-    public class CartItem {
-        @AuraEnabled public Id itemId;
-        @AuraEnabled public Integer quantity;
-        @AuraEnabled public Decimal unitCost;
-
-        public CartItem(Id itemId, Integer quantity, Decimal unitCost) {
-            this.itemId = itemId;
-            this.quantity = quantity;
-            this.unitCost = unitCost;
-        }
-    }
-
     public class CheckoutResult {
         @AuraEnabled public Id purchaseId;
         @AuraEnabled public Boolean success;
@@ -25,39 +13,66 @@ public with sharing class PurchaseController {
     }
 
     @AuraEnabled
-    public static CheckoutResult checkout(Id accountId, List<CartItem> cartItems) {
+    public static CheckoutResult checkout(Id accountId, List<String> itemIds, List<Integer> quantities, List<Decimal> unitCosts) {
         CheckoutResult result = new CheckoutResult(null, false, '');
 
-        if (cartItems == null || cartItems.isEmpty()) {
+        if (itemIds == null || itemIds.isEmpty()) {
             result.message = 'Cart is empty.';
             return result;
         }
+        if (quantities == null || unitCosts == null) {
+            result.message = 'Missing quantities or costs data.';
+            return result;
+        }
+        if (quantities.size() != itemIds.size()) {
+            result.message = 'Mismatched quantities array.';
+            return result;
+        }
+        if (unitCosts.size() != itemIds.size()) {
+            result.message = 'Mismatched costs array.';
+            return result;
+        }
 
-        // Validate stock availability for all items
-        Set<Id> itemIds = new Set<Id>();
-        for (CartItem ci : cartItems) {
-            itemIds.add(ci.itemId);
+        System.debug('DEBUG checkout: accountId=' + accountId + ' itemIds.size=' + itemIds.size());
+
+        // Validate and collect IDs
+        Set<Id> validIds = new Set<Id>();
+        for (Integer i = 0; i < itemIds.size(); i++) {
+            String rawId = itemIds[i];
+            System.debug('DEBUG item[' + i + ']: rawId=' + rawId + ' qty=' + quantities[i] + ' cost=' + unitCosts[i]);
+            if (String.isBlank(rawId)) {
+                result.message = 'Item ID missing at position ' + (i + 1);
+                return result;
+            }
+            try {
+                validIds.add(Id.valueOf(rawId));
+            } catch (Exception e) {
+                result.message = 'Invalid ID at position ' + (i + 1) + ': ' + rawId;
+                return result;
+            }
         }
 
         Map<Id, Item__c> itemMap = new Map<Id, Item__c>([
             SELECT Id, Name, AvailableQuantity__c, Price__c
             FROM Item__c
-            WHERE Id IN :itemIds
+            WHERE Id IN :validIds
         ]);
 
-        for (CartItem ci : cartItems) {
-            Item__c item = itemMap.get(ci.itemId);
+        // Validate stock
+        for (Integer i = 0; i < itemIds.size(); i++) {
+            Id parsedId = Id.valueOf(itemIds[i]);
+            Item__c item = itemMap.get(parsedId);
             if (item == null) {
-                result.message = 'Item not found: ' + ci.itemId;
+                result.message = 'Item not found: ' + itemIds[i];
                 return result;
             }
-            if (item.AvailableQuantity__c < ci.quantity) {
-                result.message = 'Not enough stock for ' + item.Name + '. Available: ' + item.AvailableQuantity__c + ', Requested: ' + ci.quantity;
+            if (item.AvailableQuantity__c < quantities[i]) {
+                result.message = 'Not enough stock for ' + item.Name + '. Available: ' + item.AvailableQuantity__c + ', Requested: ' + quantities[i];
                 return result;
             }
         }
 
-        // Create Purchase record
+        // Create Purchase
         Purchase__c purchase = new Purchase__c();
         purchase.ClientId__c = accountId;
         purchase.TotalItems__c = 0;
@@ -65,7 +80,7 @@ public with sharing class PurchaseController {
 
         try {
             insert purchase;
-        } catch (DmlException e) {
+        } catch (Exception e) {
             result.message = 'Failed to create purchase: ' + e.getMessage();
             return result;
         }
@@ -76,32 +91,29 @@ public with sharing class PurchaseController {
         Decimal grandTotal = 0;
         Integer totalItems = 0;
 
-        for (CartItem ci : cartItems) {
-            Item__c item = itemMap.get(ci.itemId);
+        for (Integer i = 0; i < itemIds.size(); i++) {
+            Id parsedId = Id.valueOf(itemIds[i]);
+            Item__c item = itemMap.get(parsedId);
 
             PurchaseLine__c line = new PurchaseLine__c();
             line.PurchaseId__c = purchase.Id;
-            line.ItemId__c = ci.itemId;
-            line.Amount__c = ci.quantity;
-            line.UnitCost__c = ci.unitCost;
+            line.ItemId__c = parsedId;
+            line.Amount__c = quantities[i];
+            line.UnitCost__c = unitCosts[i];
             lines.add(line);
 
-            // Prepare stock update
             Item__c itemToUpdate = new Item__c(Id = item.Id);
-            itemToUpdate.AvailableQuantity__c = item.AvailableQuantity__c - ci.quantity;
+            itemToUpdate.AvailableQuantity__c = item.AvailableQuantity__c - quantities[i];
             itemsToUpdate.add(itemToUpdate);
 
-            grandTotal += ci.unitCost * ci.quantity;
-            totalItems += ci.quantity;
+            grandTotal += unitCosts[i] * quantities[i];
+            totalItems += quantities[i];
         }
 
         try {
             insert lines;
             update itemsToUpdate;
-        } catch (DmlException e) {
-            // Clean up purchase if lines fail
-            delete [SELECT Id FROM PurchaseLine__c WHERE PurchaseId__c = :purchase.Id];
-            delete [SELECT Id FROM Purchase__c WHERE Id = :purchase.Id];
+        } catch (Exception e) {
             result.message = 'Failed to create purchase lines: ' + e.getMessage();
             return result;
         }
