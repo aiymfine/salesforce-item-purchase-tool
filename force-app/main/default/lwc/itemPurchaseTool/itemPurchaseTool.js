@@ -63,7 +63,6 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
         }
     }
 
-    // Reactive state
     items = [];
     filteredItems = [];
     cart = [];
@@ -77,36 +76,19 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
     isManager = false;
     isLoading = false;
 
-    // Wire result references for refresh
     _itemsResult;
     _familiesResult;
     _typesResult;
     _familyOptions = [];
     _typeOptions = [];
 
-    // Getters for template bindings
     get familyOptions() { return this._familyOptions; }
     get typeOptions() { return this._typeOptions; }
-
-    get itemCount() {
-        return this.filteredItems.length;
-    }
-
-    get cartItemCount() {
-        return this.cart.reduce((sum, ci) => sum + ci.quantity, 0);
-    }
-
-    get cartTotal() {
-        return this.cart.reduce((sum, ci) => sum + (ci.unitPrice * ci.quantity), 0);
-    }
-
-    get isCartEmpty() {
-        return this.cartItemCount === 0;
-    }
-
-    get hasItems() {
-        return this.filteredItems.length > 0;
-    }
+    get itemCount() { return this.filteredItems.length; }
+    get cartItemCount() { return this.cart.reduce((sum, ci) => sum + ci.quantity, 0); }
+    get cartTotal() { return this.cart.reduce((sum, ci) => sum + (ci.unitPrice * ci.quantity), 0); }
+    get isCartEmpty() { return this.cartItemCount === 0; }
+    get hasItems() { return this.filteredItems.length > 0; }
 
     handleFamilyChange(event) {
         this.selectedFamily = event.detail.value;
@@ -125,7 +107,6 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
 
     applyFilters() {
         let filtered = [...this.items];
-
         if (this.selectedFamily) {
             filtered = filtered.filter(i => i.Family__c === this.selectedFamily);
         }
@@ -138,7 +119,6 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
                 (i.Description__c && i.Description__c.toLowerCase().includes(this.searchKey))
             );
         }
-
         this.filteredItems = filtered;
     }
 
@@ -157,21 +137,10 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
         this.selectedItem = null;
     }
 
-    handleShowCart() {
-        this.showCartModal = true;
-    }
-
-    handleCloseCart() {
-        this.showCartModal = false;
-    }
-
-    handleShowCreate() {
-        this.showCreateModal = true;
-    }
-
-    handleCloseCreate() {
-        this.showCreateModal = false;
-    }
+    handleShowCart() { this.showCartModal = true; }
+    handleCloseCart() { this.showCartModal = false; }
+    handleShowCreate() { this.showCreateModal = true; }
+    handleCloseCreate() { this.showCreateModal = false; }
 
     handleItemCreated() {
         this.showCreateModal = false;
@@ -181,11 +150,9 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
     handleAddToCart(event) {
         const itemId = event.detail;
         if (!itemId) {
-            console.error('handleAddToCart: itemId is empty!', event.detail);
             this.showToast('Error', 'Could not identify item.', 'error');
             return;
         }
-        console.log('handleAddToCart: itemId =', itemId, typeof itemId);
         const item = this.items.find(i => this._getItemId(i) === itemId);
         if (!item || item.AvailableQuantity__c <= 0) {
             this.showToast('Out of Stock', 'This item is no longer available.', 'warning');
@@ -210,7 +177,6 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
             }];
         }
 
-        console.log('Cart after add:', JSON.parse(JSON.stringify(this.cart)));
         this.showToast('Added', item.Name + ' added to cart.', 'success');
     }
 
@@ -231,7 +197,6 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
         const itemIds = this.cart.map(c => c.itemId);
         const quantities = this.cart.map(c => c.quantity);
         const unitCosts = this.cart.map(c => c.unitPrice);
-        console.log('CHECKOUT: itemIds=' + JSON.stringify(itemIds));
 
         checkout({ accountId: this.recordId, itemIds, quantities, unitCosts })
             .then(result => {
@@ -239,7 +204,6 @@ export default class ItemPurchaseTool extends NavigationMixin(LightningElement) 
                     this.showToast('Success', 'Purchase created! (ID: ' + result.purchaseId + ')', 'success');
                     this.cart = [];
                     this.showCartModal = false;
-
                     try {
                         this[NavigationMixin.Navigate]({
                             type: 'standard__recordPage',

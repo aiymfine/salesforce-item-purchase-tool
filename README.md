@@ -8,8 +8,8 @@ A Salesforce LWC + Apex one-page application for creating purchases from an Acco
 - 🛒 **Shopping Cart** — Add items to cart, adjust quantities, view totals
 - ✅ **Checkout** — Creates Purchase + PurchaseLine records, validates stock, decreases available quantity
 - 🔢 **Auto-calculated Totals** — Trigger auto-computes TotalItems and GrandTotal on Purchase
-- 👔 **Manager Mode** — Users with `IsManager__c = true` can create new items
-- 🖼️ **Unsplash Integration** — Auto-fetch item images via Unsplash API
+- 👔 **Manager Mode** — Users with `IsManager__c = true` can create new items (conditional rendering)
+- 🖼️ **Unsplash Integration** — Auto-fetch item images via Unsplash API (optional, requires API key)
 - 📊 **Item Count** — Filter section shows count of displayed items
 
 ## Data Model
@@ -19,40 +19,40 @@ A Salesforce LWC + Apex one-page application for creating purchases from an Acco
 |--------|-------------|
 | `Item__c` | Products available for purchase |
 | `Purchase__c` | A purchase order linked to an Account |
-| `PurchaseLine__c` | Individual line items within a Purchase |
+| `PurchaseLine__c` | Individual line items within a Purchase (Master-Detail to Purchase__c and Item__c) |
 
 ### Custom Fields
 - **User.IsManager__c** — Boolean flag for manager access
 - **UnsplashSettings__c** — Custom settings for Unsplash API key
 
-## User Stories Covered
+## User Stories
 
-1. ✅ Button on Account layout → Item Purchase Tool in new tab
+1. ✅ Item Purchase Tool embedded on Account page layout
 2. ✅ Display Account Name, Number, Industry
-3. ✅ Filter items by Family and Type
-4. ✅ Show item count in filter section
+3. ✅ Filter items by Family and Type (picklist comboboxes)
+4. ✅ Show count of filtered items
 5. ✅ Search items by Name and Description
-6. ✅ Item detail modal with image (via `lightning-record-view-form`)
+6. ✅ Item detail modal with image (`lightning-record-view-form`)
 7. ✅ Add item to Cart with toast notification
-8. ✅ View Cart in modal (table)
-9. ✅ Cannot add out-of-stock items
-10. ✅ Checkout validates quantity, creates records, decreases stock
-11. ✅ TotalItems & GrandTotal auto-calculated via Trigger
-12. ✅ Redirect to Purchase record after checkout
-13. ✅ Manager-only Create Item button
+8. ✅ View Cart in modal (table with subtotal)
+9. ✅ Cannot add out-of-stock items to Cart
+10. ✅ Checkout validates quantity, creates Purchase + PurchaseLines, decreases AvailableQuantity
+11. ✅ TotalItems & GrandTotal auto-calculated via Apex Trigger
+12. ✅ Redirect to Purchase record page after checkout
+13. ✅ Manager-only "Create Item" button (conditional)
 14. ✅ Unsplash API image search integration
 
 ## Tech Stack
 
 - **Frontend:** Lightning Web Components (LWC) + Lightning Design System (SLDS)
 - **Backend:** Apex Controllers + Apex Trigger
-- **Tests:** Apex Unit Tests (4 test classes, ~20 test methods)
-- **Tooling:** Salesforce CLI (sf), VS Code + Salesforce Extension Pack
+- **Tests:** 24 Apex unit tests (100% pass rate)
+- **Tooling:** Salesforce CLI (`sf`)
 
 ## Setup
 
 ### Prerequisites
-- Salesforce Dev Org
+- Salesforce Org (Dev Edition or Enterprise)
 - Salesforce CLI: `npm install -g @salesforce/cli`
 - VS Code + Salesforce Extension Pack
 
@@ -65,14 +65,8 @@ sf org login web
 # Deploy all metadata
 sf project deploy start --source-dir force-app
 
-# Assign permission set to users
-sf org assign permset --name "Item_Purchase_Tool_Access"
-
-# Run tests
-sf apex run test --class "ItemControllerTest"
-sf apex run test --class "PurchaseControllerTest"
-sf apex run test --class "PurchaseLineTriggerTest"
-sf apex run test --class "UserControllerTest"
+# Run all tests
+sf apex run test
 ```
 
 ### Configure Unsplash (Optional)
@@ -82,39 +76,39 @@ sf apex run test --class "UserControllerTest"
 4. Create a new record with your Access Key
 5. Add `https://api.unsplash.com` to **Remote Site Settings**
 
-### Add Button to Account Layout
-1. Go to **Account** object → **Buttons, Links, and Actions** → New Button
-2. Type: **Lightning Page**
-3. Label: `Item Purchase Tool`
-4. Add the button to Account Page Layout
+### Add to Account Page
+1. Open any Account record
+2. Click the gear icon → **Edit Page** (Lightning App Builder)
+3. Search for **Item Purchase Tool** in the Custom components panel
+4. Drag it onto the page layout
+5. Save and activate
 
 ## Project Structure
 
 ```
 force-app/main/default/
 ├── classes/
-│   ├── ItemController.cls          # Item CRUD operations
-│   ├── PurchaseController.cls      # Checkout logic
-│   ├── UserController.cls           # Manager check
-│   ├── UnsplashController.cls       # Unsplash image search
-│   └── *Test.cls                    # Unit tests
+│   ├── ItemController.cls              # Item CRUD + filtering + picklist values
+│   ├── PurchaseController.cls          # Checkout with stock validation
+│   ├── UserController.cls              # Manager check (dynamic SOQL)
+│   ├── UnsplashController.cls         # Unsplash image search
+│   └── *Test.cls                       # Unit tests (24 methods total)
 ├── lwc/
-│   ├── itemPurchaseTool/            # Main page component
-│   ├── itemPurchaseToolItem/        # Item tile card
-│   ├── itemCartModal/               # Cart modal
-│   ├── itemDetailModal/             # Item detail modal
-│   └── createItemModal/             # Create item (manager only)
+│   ├── itemPurchaseTool/               # Main page component (cart state, filters)
+│   ├── itemPurchaseToolItem/           # Item tile card
+│   ├── itemCartModal/                  # Cart modal (quantity, remove, checkout)
+│   ├── itemDetailModal/               # Item detail view + add to cart
+│   └── createItemModal/               # Create item form (manager only)
 ├── objects/
-│   ├── Item__c/                     # Item custom object + fields
-│   ├── Purchase__c/                 # Purchase custom object + fields
-│   ├── PurchaseLine__c/             # PurchaseLine custom object + fields
-│   ├── User/fields/IsManager__c     # Manager flag
-│   └── UnsplashSettings__c/         # API key settings
+│   ├── Item__c/                        # Item custom object + fields
+│   ├── Purchase__c/                    # Purchase custom object + fields
+│   ├── PurchaseLine__c/                # PurchaseLine custom object + fields
+│   ├── User/fields/IsManager__c       # Manager flag on User
+│   └── UnsplashSettings__c/           # API key custom setting
 ├── triggers/
-│   └── PurchaseLineTrigger.trigger  # Auto-calculate totals
-├── tabs/                            # Custom tabs
-├── flexipages/                      # Lightning pages
-└── permissionsets/                  # Access permissions
+│   └── PurchaseLineTrigger.trigger     # Auto-calculate TotalItems & GrandTotal
+└── permissionsets/
+    └── Item_Purchase_Tool_Access.permissionset
 ```
 
 ## License

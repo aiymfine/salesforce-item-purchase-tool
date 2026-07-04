@@ -22,14 +22,12 @@ export default class ItemPurchaseToolItem extends LightningElement {
     }
 
     _getItemId() {
-        // querySelector reads data-attr from native div — bypasses lightning-button shadow DOM
         const el = this.template.querySelector('[data-item-id]');
         return el ? el.dataset.itemId : null;
     }
 
     handleDetails() {
         const itemId = this._getItemId();
-        console.log('handleDetails: itemId =', itemId);
         if (itemId) {
             this.dispatchEvent(new CustomEvent('showdetail', {
                 detail: itemId,
@@ -42,11 +40,7 @@ export default class ItemPurchaseToolItem extends LightningElement {
     handleAdd() {
         if (this.isOutOfStock) return;
         const itemId = this._getItemId();
-        console.log('handleAdd: itemId =', itemId, 'item.Id =', this.item?.Id, 'item.id =', this.item?.id);
-        if (!itemId) {
-            console.error('handleAdd: FAILED to get itemId!', JSON.stringify(this.item));
-            return;
-        }
+        if (!itemId) return;
         this.dispatchEvent(new CustomEvent('addtocart', {
             detail: itemId,
             bubbles: false,

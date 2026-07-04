@@ -33,13 +33,10 @@ public with sharing class PurchaseController {
             return result;
         }
 
-        System.debug('DEBUG checkout: accountId=' + accountId + ' itemIds.size=' + itemIds.size());
-
         // Validate and collect IDs
         Set<Id> validIds = new Set<Id>();
         for (Integer i = 0; i < itemIds.size(); i++) {
             String rawId = itemIds[i];
-            System.debug('DEBUG item[' + i + ']: rawId=' + rawId + ' qty=' + quantities[i] + ' cost=' + unitCosts[i]);
             if (String.isBlank(rawId)) {
                 result.message = 'Item ID missing at position ' + (i + 1);
                 return result;
