@@ -39,7 +39,7 @@
                                                 onblur={handleQuantityBlur}>
                                             </lightning-input>
                                         </td>
-                                        <td>{cartTotal}</td>
+                                        <td>{cartItem.item.Price__c * cartItem.quantity}</td>
                                         <td>
                                             <button class="slds-button slds-button_icon slds-button_icon-text-destructive" title="Remove" data-item-id={cartItem.item.Id} onclick={handleRemove}>
                                                 <lightning-icon icon-name="utility:delete" size="small"></lightning-icon>

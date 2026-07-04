@@ -2,11 +2,20 @@ public with sharing class UserController {
 
     @AuraEnabled(cacheable=true)
     public static Boolean isCurrentUserManager() {
-        // Manager check — uses custom permission or role-based logic
-        // The IsManager__c checkbox on User object (when deployed) takes precedence
-        String profileName = UserInfo.getProfileId() != null ? 'Active' : '';
-        // Default: return false. Once IsManager__c field is deployed on User,
-        // update this method to query SELECT IsManager__c FROM User WHERE Id = :UserInfo.getUserId()
+        try {
+            String userId = UserInfo.getUserId();
+            List<SObject> users = Database.query(
+                'SELECT IsManager__c FROM User WHERE Id = \'' + String.escapeSingleQuotes(userId) + '\' LIMIT 1'
+            );
+            if (!users.isEmpty()) {
+                Object val = users[0].get('IsManager__c');
+                if (val != null && (Boolean) val) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            // IsManager__c field not yet deployed — default to false
+        }
         return false;
     }
 }
